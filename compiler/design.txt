@@ -1,0 +1,115 @@
+The output is an ELF executable suitable for execution on Linux.
+
+The ELF executable contains a text section containing the Brainfuck program
+(see below for a mapping) and a bss section, which is used as the data segment.
+
+
+
+
+
+LANGUAGE
+--------
+The language supported is very close to the original Brainfuck language.
+
+The data segment of a large (infinite, in theory) number of registers indexed
+from 0, and a data pointer that starts at register 0. Registers store values
+from 0 to 255 (inclusive) and wrap around (i.e. incrementing 255 yields 0;
+decrementing 0 yields 255).
+
+
+MAPPING TO C
+------------
+Brainfuck can be mapped to C as follows, provided that char is 8-bit wide:
+
+Take the following code template:
+    unsigned char data[1048576] = { }, *ptr = data;
+    void getchar() { read (0, ptr, 1); }
+    void putchar() { write(1, ptr, 1); }
+    int main()
+    {
+        <insert code here>
+        return *ptr;
+    }
+
+Code is inserted by translating Brainfuck operations to C code as follows:
+
+    Operation   C code
+    ---------- -----------------------
+        >       ++ptr;
+        <       --ptr;
+        +       ++*ptr;
+        -       --*ptr;
+        ,       getchar();
+        .       putchar();
+        [       while(*ptr) {
+        ]       }
+
+Note that the machine code mapping follows this implementation as close as
+possible.
+
+
+MAPPING TO MACHINE CODE
+-----------------------
+The program defines the getchar and putchar functions, and pushes their
+locations on the stack, so they can be called through -4(EBP) abnd -8(EBP).
+
+EAX is used as the data pointer; it is initialized to the start of the
+register space. EBX is used for comparisons; it will be initialized to 0.
+Both of these registers must be preserved throughout the execution of the
+process.
+
+Operations < and > increase and decrease EAX by one, operations + and - and
+increase and decrease the byte at address EAX by one. Operations , and . invoke
+the read and write system calls. Operations [ and ] are mapped to a test
+followed by a conditional relative jump instruction.
+
+The effect of moving the register pointer outside the reserved register space
+is undefined (it may well crash the program, or do something else entirely).
+
+At the end of the Brainfuck program, the process exits with the value in the
+current register as the status code.
+
+Complete mapping of Brainfuck operations to assembly code:
+
+Operation   Assembly code           Machine code size
+---------- ----------------------- -------------------
+    >       incl    %eax            1   total:  1
+    <       decl    %eax            1   total:  1
+    +       incb    (%eax)          2   total:  2
+    -       decb    (%eax)          2   total:  2
+    ,       call    *-4(%ebp)       3   total:  3
+    .       call    *-8(%ebp)       3   total:  3
+    [       cmpb    (%eax), %bl     2   total:  8
+            jz      <forward>       5   ^^^^^^^^^
+    ]       cmpb    (%eax), %bl     2   total:  8
+            jnz     <backward>      5   ^^^^^^^^^
+
+The execution environment is equivalent to this:
+
+
+@TODO@
+Program is read in a series of cells:
+	[ C . . L H ]+ 0 . . . .
+
+
+COMPILER OPERATION
+------------------
+(begin loop locations) (program) (end loop locations)
+
+
+
+LIMITATIONS
+-----------
+ - The compiler reserves 1 MiB of register space by default.
+ - The compiler uses 16-bit values to store instruction offsets, so it can only
+   generate binaries shorter than 64 KiB.
+ - The compiler does not check the Brainfuck program for validity
+   (a Brainfuck program is valid iff all parentheses match)
+In the last two cases, the behaviour of the compiler is undefined; it may
+crash, loop indefinitely, or silently generate bad code.
+
+TODO
+----
+Add checker for program validity to compiler, so it rejects invalid Brainfuck
+programs.
+
