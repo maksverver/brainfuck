@@ -7,20 +7,14 @@ int main(int argc, char *argv[])
     unsigned char data[65536] = { }, *dp = data;
     int n;
 
-    if (argc != 2)
-    {
-        fprintf(stderr, "Usage: %s <program>\n", argv[0]);
-        return 1;
-    }
-
-    fp = fopen(argv[1], "rt");
+    fp = argc > 1 ? fopen(argv[1], "rt") : stdin;
     if (!fp)
     {
         fprintf(stderr, "Could not open \"%s\"!\n", argv[0]);
         return 1;
     }
     eof = code + fread(code, 1, sizeof(code), fp);
-    fclose(fp);
+    if (fp != stdin) fclose(fp);
 
     while (ip != eof)
     {
