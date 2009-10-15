@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     fp = fopen(argv[1], "rt");
     if (!fp)
     {
-        fprintf(stderr, "Could not open \"%s\"!\n");
+        fprintf(stderr, "Could not open \"%s\"!\n", argv[0]);
         return 1;
     }
     eof = code + fread(code, 1, sizeof(code), fp);
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
             }
             break;
         case '!':
-            printf("%04x  ", ip - code);
+            printf("%04x  ", (int)(ip - code));
             for (n = 0; n < 32; ++n)
                 printf("%c%02x", (dp == &data[n]) ? '>' : ' ' , data[n]);
             printf("\n");
