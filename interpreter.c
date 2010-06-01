@@ -1,3 +1,6 @@
+/* A trivial Brainfuck interpreter in C.
+   Maks Verver <maksverver@geocities.com> May 2010 */
+
 #include <stdio.h>
 
 int main(int argc, char *argv[])

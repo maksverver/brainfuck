@@ -1,5 +1,5 @@
 CFLAGS=-O2
-FILES=interpreter bf2c woorden
+FILES=interpreter interpreter2 bf2c woorden
 
 all: $(FILES)
 
